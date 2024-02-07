@@ -1,47 +1,44 @@
-import React, { Component, useState } from 'react';
-import contract from './contract/artifacts/Lottery.json';
+import React, {useState, useEffect} from 'react';
+// import contract from './contract/artifacts/Lottery.json';
+import Lottery from './lottery';
+import web3 from './web3';
 
-const Web3 = require('web3');
-const abi = contract.abi;
-const address = '0x704C5Bb7c68123fe5041E2B3e31d26CDd6c164dC';
+// const address = '0x704C5Bb7c68123fe5041E2B3e31d26CDd6c164dC';
 
 function LotteryBallot() {
 
-  const [selected, setSelected] = useState(null);
   const [bids, setBids] = useState([0, 0, 0]);
-  const [currentAccount, setCurrentAccount] = useState('0x0');
-  const [ownersAccount, setOwnersAccount] = getOwner();
-  
-
-  const handleClick = (item) => {
-    setSelected(item);
-  }
-
-  const getOwner = () => {
-    const web3 = new Web3(Web3.givenProvider);
-    const lottery = new web3.eth.Contract(abi, address);
-    const owner = lottery.methods.owner().call();
-    setOwnersAccount(owner);
-  }
-
-  // const getAccount = async () => {
-  //   const { ethereum } = window;
-  //   if (!ethereum) {
-  //     console.log('Make sure you have a wallet installed!');
-  //     return;
-  //   }
-  //   const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
-  //   setCurrentAccount(accounts[0]);
-  // }
-
+  const [currentAccount, setCurrentAccount] = useState('0x000');
+  const [ownersAccount, setOwnersAccount] = useState('0x000');
+  const [ethBalance, setEthBalance] = useState(0);
   const bidLaptop = () => {
     // Increase the bid for the selected item by 1
     setBids([bids[0] + 1, bids[1], bids[2]]);
   }
+
+  const getUserAddress = () => {
+    window.ethereum
+      .request({ method: 'eth_requestAccounts' })
+      .then((accounts) => {
+        setCurrentAccount(accounts[0]);
+      })
+      .catch((err) => console.error(err));  
+  }
+
+  const getBalance = async () => {
+    const balance = await web3.eth.getBalance(currentAccount);
+    const eth = web3.utils.fromWei(balance, 'ether');
+    setEthBalance(eth);
+  }
+
+  const getContractOwner = async () => {
+    const owner = await Lottery.provider.getSigner();
+    setOwnersAccount(owner);
+  }
     
   const handleReveal = () => {
     // Implement reveal functionality here
-    alert('Congratulations! You won the ' + selected + '!');
+    alert('Congratulations! You won the ' + '!');
   };
 
   const handleWithdraw = () => {
@@ -57,7 +54,7 @@ function LotteryBallot() {
   const LaptopSelection=()=> {
     return (
       <div className='selection'>
-      <button onClick={bidLaptop} disabled={selected}>
+      <button onClick={bidLaptop}>
         Laptop
       </button>
       {bids[0]}
@@ -68,7 +65,7 @@ function LotteryBallot() {
   const CarSelection=()=> {
     return (
       <div>
-        <button onClick={() => handleClick('Car')} disabled={selected}>
+        <button >
           Car
         </button>
       </div>
@@ -77,13 +74,33 @@ function LotteryBallot() {
 
   function PhoneSelection() {
     return (
-      <button onClick={() => handleClick('Phone')} disabled={selected}>
+      <button >
         Phone
       </button>
     );
   }
 
+  function load(){
+    getUserAddress();
+
+    //check event account change and update the state
+    window.ethereum.on('accountsChanged', function (accounts) {
+      setCurrentAccount(accounts[0]);
+    });
+  }
+
+  useEffect(load, []);
+
+  useEffect(() => {
+    if (currentAccount!== '0x000') {
+      getBalance();
+    }
+  }, [currentAccount]);
+
+
+
   return (
+
     <div className="lottery-ballot">
       <h1>Lottery - Ballot</h1>
       <div className='selection'> 
@@ -93,18 +110,18 @@ function LotteryBallot() {
 
       </div>
       <div className="bid-details">
-        <p>Bid: {selected ? 5 : '-'}</p>
         <p>Current Account: {currentAccount}</p>
+        <p>Balance eth: {ethBalance}</p>
         <p>Owner's Account: {ownersAccount}</p>
       </div>
       <div className="actions">
-        <button onClick={handleReveal} disabled={!selected}>
+        <button onClick={getUserAddress}>
           Reveal
         </button>
-        <button onClick={handleWithdraw} disabled={!selected}>
+        <button onClick={handleWithdraw}>
           Withdraw
         </button>
-        <button onClick={handleDeclareWinner} disabled={!selected}>
+        <button onClick={handleDeclareWinner}>
           Declare Winner
         </button>
       </div>
