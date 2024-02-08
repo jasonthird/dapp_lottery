@@ -22,6 +22,7 @@ code {
 .selection {
   display: flex;
   justify-content: space-between;
+  flex-wrap: wrap;
   margin-bottom: 20px;
 }
 
@@ -73,4 +74,17 @@ code {
 .actions button:disabled {
   background-color: #ccc;
   cursor: not-allowed;
+}
+
+.bid-button {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-direction: column;
+  margin-bottom: 20px;
+}
+
+.bid-value{
+  font-size: 20px;
+  font-weight: bold;
 }

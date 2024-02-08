@@ -1,9 +1,6 @@
 import React, {useState, useEffect} from 'react';
-// import contract from './contract/artifacts/Lottery.json';
 import Lottery from './lottery';
 import web3 from './web3';
-
-// const address = '0x704C5Bb7c68123fe5041E2B3e31d26CDd6c164dC';
 
 function LotteryBallot() {
 
@@ -11,9 +8,16 @@ function LotteryBallot() {
   const [currentAccount, setCurrentAccount] = useState('0x000');
   const [ownersAccount, setOwnersAccount] = useState('0x000');
   const [ethBalance, setEthBalance] = useState(0);
-  const bidLaptop = () => {
-    // Increase the bid for the selected item by 1
-    setBids([bids[0] + 1, bids[1], bids[2]]);
+
+
+  const bidLaptop = async () => {
+    //we call bid function from the contract with the value of 3
+    Lottery.methods.bid(2).send({from: currentAccount, value: web3.utils.toWei('0.01', 'ether'), gasLimit:3000000}).then((res) => {
+      console.log(res);
+    }
+    ).catch((err) => {
+      console.log(err);
+    });
   }
 
   const getUserAddress = () => {
@@ -22,17 +26,26 @@ function LotteryBallot() {
       .then((accounts) => {
         setCurrentAccount(accounts[0]);
       })
-      .catch((err) => console.error(err));  
+      .catch((err) => {
+        alert('Please connect to MetaMask');
+      }
+    ); 
   }
 
   const getBalance = async () => {
+    if (await checkNetwork() === false || await checkMetamask() === false){
+      return;
+    }
     const balance = await web3.eth.getBalance(currentAccount);
     const eth = web3.utils.fromWei(balance, 'ether');
     setEthBalance(eth);
   }
 
   const getContractOwner = async () => {
-    const owner = await Lottery.provider.getSigner();
+    if (await checkNetwork() === false || await checkMetamask() === false){
+      return;
+    }
+    const owner = await Lottery.methods.getOwner().call();
     setOwnersAccount(owner);
   }
     
@@ -51,37 +64,78 @@ function LotteryBallot() {
     alert('A winner has been declared!');
   };
 
+  const checkNetwork = async () => {
+    const id = await web3.eth.net.getId();
+    if (id !== 11155111n) {
+      alert('Please connect to the Sepolia network');
+      return false;
+    }
+    return true;
+  }
+  
+  const checkMetamask = async () => {
+    if (typeof window.ethereum === 'undefined') {
+      alert('Please install MetaMask');
+      return false;
+    }
+    return true;
+  }
+
+  const getTotalBidValues = async () => {
+    if (await checkNetwork() === false || await checkMetamask() === false){
+      return;
+    }
+    const totalBids = await Lottery.methods.getAllItemBidNumber().call();
+    const newbids = [parseInt([totalBids[0]]), parseInt([totalBids[1]]), parseInt([totalBids[2]])];
+    console.log(totalBids);
+    console.log(newbids);
+    setBids(newbids);
+  }
+
   const LaptopSelection=()=> {
     return (
-      <div className='selection'>
+      <div className='bid-button'>
       <button onClick={bidLaptop}>
         Laptop
       </button>
-      {bids[0]}
+      <div className='bid-value'>
+        {bids[2]}
+      </div>
       </div>
     );
   }
 
   const CarSelection=()=> {
     return (
-      <div>
+      <div className='bid-button'>
         <button >
           Car
         </button>
+        <div className='bid-value'>
+          {bids[0]}
+        </div>
       </div>
     );
   }
 
   function PhoneSelection() {
     return (
+      <div className='bid-button'>
       <button >
         Phone
       </button>
+      <div className='bid-value'>
+          {bids[1]}
+      </div>
+      </div>
     );
   }
 
   function load(){
+
     getUserAddress();
+    getContractOwner();
+    getTotalBidValues();
 
     //check event account change and update the state
     window.ethereum.on('accountsChanged', function (accounts) {
