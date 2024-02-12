@@ -91,5 +91,4 @@ contract Lottery {
             DeclareWinner(i);
         }
     }
-
 }
