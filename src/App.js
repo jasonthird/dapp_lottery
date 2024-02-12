@@ -177,15 +177,15 @@ function LotteryBallot() {
                 "The lottery is still open and the winners have not been drawn yet"
               );
             } else if (itemsWon.length === 0) {
-              alert("You did not win anything");
+              alert("You did not win anything (0)");
             } else {
               const stringItems = itemsWon.map((item) => {
                 if (item === 0) {
-                  return "Car";
+                  return "Car(1)";
                 } else if (item === 1) {
-                  return "Phone";
+                  return "Phone(2)";
                 } else {
-                  return "Laptop";
+                  return "Laptop(3)";
                 }
               });
               alert("You won the following items: " + stringItems);
@@ -230,11 +230,14 @@ function LotteryBallot() {
   }
 
   function load() {
+    if (typeof window.ethereum === "undefined") {
+      alert("Please install MetaMask");
+      return;
+    }
     getUserAddress();
     getContractOwner();
     getTotalBidValues();
-
-    //check event account change and update the state
+    
     window.ethereum.on("accountsChanged", function (accounts) {
       setCurrentAccount(accounts[0].toLowerCase());
     });

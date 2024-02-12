@@ -91,4 +91,20 @@ contract Lottery {
             DeclareWinner(i);
         }
     }
+
+    function selfDestruct() public onlyOwner() {
+        //https://eips.ethereum.org/EIPS/eip-4758
+        selfdestruct(payable(owner));
+    }
+
+    function reset() public onlyOwner() {
+        for (uint i = 0; i < 3; i++) {
+            items[i].winner = address(0);
+            items[i].itemTokens = new address[](0);
+        }
+    }
+
+    function transferOwnership(address newOwner) public onlyOwner() {
+        owner = newOwner;
+    }
 }
