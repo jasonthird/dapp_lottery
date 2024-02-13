@@ -1,7 +1,7 @@
 import web3 from "./web3";
 import contract from "./contract/artifacts/Lottery.json";
 
-const address = '0x704C5Bb7c68123fe5041E2B3e31d26CDd6c164dC';
+const address = '0xc5E906C0b1A49d2FCD3891EB6F61D4007a302a49';
 
 const abi = contract.abi;
 

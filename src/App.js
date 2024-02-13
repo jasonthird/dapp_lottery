@@ -156,11 +156,11 @@ function LotteryBallot() {
   };
 
   const checkNetwork = async () => {
-    // const id = await web3.eth.net.getId();
-    // if (id !== 11155111n) {
-    //   alert('Please connect to the Sepolia network');
-    //   return false;
-    // }
+    const id = await web3.eth.net.getId();
+    if (id !== 11155111n) {
+      alert('Please connect to the Sepolia network');
+      return false;
+    }
     return true;
   };
 
