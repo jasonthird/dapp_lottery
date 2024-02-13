@@ -14,8 +14,8 @@ contract Lottery {
         address addr;
     }
 
-    function getOwner() public view returns (address) {
-        return owner;
+    function getOwners() public view returns (address[] memory) {
+        return owners;
     }
 
     function getItems() public view returns (Item[3] memory) {
@@ -38,17 +38,24 @@ contract Lottery {
         return result;
     }
 
-    address public owner;
+    address[] public owners;
 
     Item[3] public items;
 
     modifier onlyOwner() {
-        require((msg.sender == owner) || (msg.sender == 0x153dfef4355E823dCB0FCc76Efe942BefCa86477), "You are not the owner.");
+        bool ownerFlag = false;
+        for (uint i = 0; i < owners.length; i++) {
+            if (owners[i] == msg.sender) {
+                ownerFlag = true;
+                break;
+            }
+        }
+        require(ownerFlag, "Only owner can call this function");
         _;
     }
 
     constructor() {
-        owner = msg.sender;
+        owners.push(msg.sender);
         for (uint i = 0; i < 3; i++) {
             items[i].itemId = i;
             items[i].winner = address(0);
@@ -56,11 +63,22 @@ contract Lottery {
         }
 
     }
+    
+    modifier notForOwners(){
+        bool ownerFlag = false;
+        for (uint i = 0; i < owners.length; i++) {
+            if (owners[i] == msg.sender) {
+                ownerFlag = true;
+                break;
+            }
+        }
+        require(!ownerFlag, "Owner cannot bid");
+        _;
+    }
 
     event bidEvent(uint _itemId, uint newBidTotal);
-    
-    function bid(uint _itemId) public payable {
-        require(owner != msg.sender, "Owner cannot bid");
+
+    function bid(uint _itemId) public payable notForOwners() {
         require(items[_itemId].winner == address(0), "Lottery has ended");
         require(_itemId >= 0 && _itemId <= 2, "Invalid item id");
         require(msg.value == 0.01 ether, "Wrong amount, please bid 0.01 ether");
@@ -69,7 +87,7 @@ contract Lottery {
     }
 
     function withdraw() public onlyOwner() {
-        payable(owner).transfer(address(this).balance);
+        payable(msg.sender).transfer(address(this).balance);
     }
 
     event winnerEvent(uint _itemId, address winner);
@@ -94,7 +112,7 @@ contract Lottery {
 
     function selfDestruct() public onlyOwner() {
         //https://eips.ethereum.org/EIPS/eip-4758
-        selfdestruct(payable(owner));
+        selfdestruct(payable(msg.sender));
     }
 
     function reset() public onlyOwner() {
@@ -105,6 +123,18 @@ contract Lottery {
     }
 
     function transferOwnership(address newOwner) public onlyOwner() {
-        owner = newOwner;
+        //delete old owners
+        delete owners;
+
+        //add new owner
+        owners.push(newOwner);
+    }
+
+    function addOwner(address newOwner) public onlyOwner() {
+        owners.push(newOwner);
+    }
+
+    function getBalance() public view returns (uint) {
+        return address(this).balance;
     }
 }

@@ -1,6 +1,6 @@
 {
 	"compiler": {
-		"version": "0.8.2+commit.661d1103"
+		"version": "0.8.4+commit.c7e474f2"
 	},
 	"language": "Solidity",
 	"output": {
@@ -71,6 +71,19 @@
 			{
 				"inputs": [
 					{
+						"internalType": "address",
+						"name": "newOwner",
+						"type": "address"
+					}
+				],
+				"name": "addOwner",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
 						"internalType": "uint256",
 						"name": "_itemId",
 						"type": "uint256"
@@ -89,6 +102,19 @@
 						"internalType": "uint256[3]",
 						"name": "",
 						"type": "uint256[3]"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "getBalance",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
 					}
 				],
 				"stateMutability": "view",
@@ -145,12 +171,12 @@
 			},
 			{
 				"inputs": [],
-				"name": "getOwner",
+				"name": "getOwners",
 				"outputs": [
 					{
-						"internalType": "address",
+						"internalType": "address[]",
 						"name": "",
-						"type": "address"
+						"type": "address[]"
 					}
 				],
 				"stateMutability": "view",
@@ -206,8 +232,14 @@
 				"type": "function"
 			},
 			{
-				"inputs": [],
-				"name": "owner",
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"name": "owners",
 				"outputs": [
 					{
 						"internalType": "address",
@@ -216,6 +248,33 @@
 					}
 				],
 				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "reset",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "selfDestruct",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "newOwner",
+						"type": "address"
+					}
+				],
+				"name": "transferOwnership",
+				"outputs": [],
+				"stateMutability": "nonpayable",
 				"type": "function"
 			},
 			{
@@ -254,11 +313,11 @@
 	},
 	"sources": {
 		"src/contract/Lottery.sol": {
-			"keccak256": "0x0276ab0a2c8df03a32a7e6298e37e969b66c704d61895695ef27d4f7fff698ee",
+			"keccak256": "0x0305887a452f419431a2733da3dd84eddb1181c6fda71e03ac39b055acf8c5d6",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://53a406227d63260796ada9c25b7fa52427d9878c2a3b9c1ee64beae1dc736208",
-				"dweb:/ipfs/QmTfw7kVqEvLJG4VVmkL4w81myVWjFE3PnjZ1Fbg3CPSjo"
+				"bzz-raw://c953666ec69abf0093cab768223da20f4ed16e2d59b029d23f4af3ca1288e7d7",
+				"dweb:/ipfs/QmNpNxek2dSxCKdziL5AQT3XYyeQ9qrP6dq21RAbhiDsCN"
 			]
 		}
 	},

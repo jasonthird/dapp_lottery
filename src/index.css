@@ -95,6 +95,7 @@ code {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
   margin-bottom: 20px;
   background-color: #a0a0a0;
   padding: 20px;

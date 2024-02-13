@@ -6,8 +6,9 @@ import lottery from "./lottery";
 function LotteryBallot() {
   const [bids, setBids] = useState([0, 0, 0]);
   const [currentAccount, setCurrentAccount] = useState("0x000");
-  const [ownersAccount, setOwnersAccount] = useState("0x000");
   const [ethBalance, setEthBalance] = useState(0);
+  const [owners = [], setOwners] = useState([]);
+  const [contractEthBalance, setContractEthBalance] = useState(0);
 
   const bidLaptop = async () => {
     bidItem(2);
@@ -25,17 +26,20 @@ function LotteryBallot() {
     if ((await checkNetwork()) === false || (await checkMetamask()) === false) {
       return;
     }
-    if (currentAccount === ownersAccount) {
+    if (checkIfUserIsAnOwner() === true) {
       alert("The owner cannot participate in the lottery");
       return;
     }
     let biddable = true;
-    await lottery.methods.items(item).call().then((res) => {
-      if (res.winner !== 0x0000000000000000000000000000000000000000) {
-        alert("The lottery is closed for this item");
-        biddable = false;
-      }
-    });
+    await lottery.methods
+      .items(item)
+      .call()
+      .then((res) => {
+        if (res.winner != 0x0000000000000000000000000000000000000000) {
+          alert("The lottery is closed for this item");
+          biddable = false;
+        }
+      });
 
     if (biddable === false) {
       return;
@@ -59,14 +63,23 @@ function LotteryBallot() {
   };
 
   const getUserAddress = () => {
-    window.ethereum
-      .request({ method: "eth_requestAccounts" })
-      .then((accounts) => {
-        setCurrentAccount(accounts[0].toLowerCase());
-      })
-      .catch((err) => {
-        alert("Please connect to MetaMask");
-      });
+    if (typeof window.ethereum === "undefined") {
+      alert("Please install MetaMask");
+      return;
+    }
+    try {
+      window.ethereum
+        .request({ method: "eth_requestAccounts" })
+        .then((accounts) => {
+          setCurrentAccount(accounts[0].toLowerCase());
+        })
+        .catch((err) => {
+          // alert("Please connect to MetaMask");
+          console.log(err);
+        });
+    } catch (err) {
+      console.log(err);
+    }
   };
 
   const getBalance = async () => {
@@ -78,16 +91,26 @@ function LotteryBallot() {
     setEthBalance(eth);
   };
 
-  const getContractOwner = async () => {
+  const updateOwners = async () => {
     if ((await checkNetwork()) === false || (await checkMetamask()) === false) {
       return;
     }
-    const owner = await Lottery.methods.getOwner().call();
-    setOwnersAccount(owner.toLowerCase());
+    try {
+      const owner = await Lottery.methods.getOwners().call();
+      const owners = owner.map((owner) => owner.toLowerCase());
+      console.log(owners);
+      setOwners(owners);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const checkIfUserIsAnOwner = () => {
+    return owners.includes(currentAccount);
   };
 
   const handleWithdraw = () => {
-    if (currentAccount === ownersAccount) {
+    if (checkIfUserIsAnOwner()) {
       const withdraw = async () => {
         await Lottery.methods
           .withdraw()
@@ -102,12 +125,11 @@ function LotteryBallot() {
       withdraw();
     } else {
       alert("You are not the owner of the contract");
-      console.log(currentAccount + " " + ownersAccount);
     }
   };
 
   const handleDeclareWinner = () => {
-    if (currentAccount === ownersAccount) {
+    if (checkIfUserIsAnOwner()) {
       const declareWinner = async () => {
         await Lottery.methods
           .DeclareAllWinners()
@@ -122,7 +144,14 @@ function LotteryBallot() {
       declareWinner();
     } else {
       alert("You are not the owner of the contract");
-      console.log(currentAccount + " " + ownersAccount);
+    }
+  };
+
+  const hideOwnerActions = () => {
+    if (checkIfUserIsAnOwner()) {
+      return "flex";
+    } else {
+      return "none";
     }
   };
 
@@ -144,26 +173,30 @@ function LotteryBallot() {
   };
 
   const getTotalBidValues = async () => {
-    if ((await checkNetwork()) === false || (await checkMetamask()) === false) {
+    if ((await checkNetwork()) == false || (await checkMetamask()) == false) {
       return;
     }
-    const totalBids = await Lottery.methods.getAllItemBidNumber().call();
-    const newBids = [
-      parseInt([totalBids[0]]),
-      parseInt([totalBids[1]]),
-      parseInt([totalBids[2]]),
-    ];
-    setBids(newBids);
+    try {
+      const totalBids = await Lottery.methods.getAllItemBidNumber().call();
+      const newBids = [
+        parseInt([totalBids[0]]),
+        parseInt([totalBids[1]]),
+        parseInt([totalBids[2]]),
+      ];
+      setBids(newBids);
+    } catch (err) {
+      console.log(err);
+    }
   };
   const handleCheckWinner = () => {
-    if (currentAccount !== ownersAccount) {
+    if (checkIfUserIsAnOwner() == false) {
       const checkWinner = async () => {
         await Lottery.methods
           .getItems()
           .call()
           .then((res) => {
-            let lotteryDrawn = new Boolean(true);
-            const itemsWon = new Array();
+            let lotteryDrawn = Boolean(true);
+            const itemsWon = [];
             res.forEach((item, index) => {
               if (item.winner == 0x0000000000000000000000000000000000000000) {
                 lotteryDrawn = Boolean(false);
@@ -198,7 +231,6 @@ function LotteryBallot() {
       checkWinner();
     } else {
       alert("the owner cannot participate in the lottery.");
-      console.log(currentAccount + " " + ownersAccount);
     }
   };
 
@@ -229,17 +261,119 @@ function LotteryBallot() {
     );
   }
 
+  const ownersForDisplay = () => {
+    return owners.map((owner) => owner + " ");
+  };
+
+  const transferOwnership = (e) => {
+    e.preventDefault();
+    if (checkIfUserIsAnOwner()) {
+      const newOwner = e.target[0].value;
+      const transfer = async () => {
+        await Lottery.methods
+          .transferOwnership(newOwner)
+          .send({ from: currentAccount })
+          .then((res) => {
+            console.log(res);
+          })
+          .catch((err) => {
+            console.log(err);
+          });
+      };
+      transfer();
+    } else {
+      alert("You are not the owner of the contract");
+    }
+  };
+
+  const AddOwner = (e) => {
+    e.preventDefault();
+    if (checkIfUserIsAnOwner()) {
+      const newOwner = e.target[0].value;
+      const addOwner = async () => {
+        await Lottery.methods
+          .addOwner(newOwner)
+          .send({ from: currentAccount })
+          .then((res) => {
+            console.log(res);
+          })
+          .catch((err) => {
+            console.log(err);
+          });
+      };
+      addOwner();
+    } else {
+      alert("You are not the owner of the contract");
+    }
+  };
+
+  const destroyContract = () => {
+    if (checkIfUserIsAnOwner()) {
+      const destroy = async () => {
+        await Lottery.methods
+          .selfDestruct()
+          .send({ from: currentAccount })
+          .then((res) => {
+            console.log(res);
+          })
+          .catch((err) => {
+            console.log(err);
+          });
+      };
+      destroy();
+    } else {
+      alert("You are not the owner of the contract");
+    }
+  };
+
+  const resetContract = () => {
+    if (checkIfUserIsAnOwner()) {
+      const reset = async () => {
+        await Lottery.methods
+          .reset()
+          .send({ from: currentAccount })
+          .then((res) => {
+            console.log(res);
+          })
+          .catch((err) => {
+            console.log(err);
+          });
+      };
+      reset();
+    } else {
+      alert("You are not the owner of the contract");
+    }
+  };
+
+  const getContractBalance = async () => {
+    if ((await checkNetwork()) === false || (await checkMetamask()) === false) {
+      return;
+    }
+    try {
+      const balance = await web3.eth.getBalance(Lottery.options.address);
+      const eth = web3.utils.fromWei(balance, "ether");
+      setContractEthBalance(eth);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
   function load() {
     if (typeof window.ethereum === "undefined") {
       alert("Please install MetaMask");
       return;
     }
     getUserAddress();
-    getContractOwner();
+    // getContractOwner();
     getTotalBidValues();
-    
+    updateOwners();
+    getContractBalance();
     window.ethereum.on("accountsChanged", function (accounts) {
-      setCurrentAccount(accounts[0].toLowerCase());
+      try {
+        setCurrentAccount(accounts[0].toLowerCase());
+      } catch (err) {
+        console.log(err);
+      }
     });
   }
 
@@ -255,6 +389,8 @@ function LotteryBallot() {
   useEffect(() => {
     const interval = setInterval(() => {
       getTotalBidValues();
+      updateOwners();
+      getContractBalance();
     }, 5000);
     return () => clearInterval(interval);
   }, []);
@@ -270,15 +406,26 @@ function LotteryBallot() {
       <div className="bid-details">
         <p>Current Account: {currentAccount}</p>
         <p>Balance eth: {ethBalance}</p>
-        <p>Owner's Account: {ownersAccount}</p>
+        <p>Owner's Accounts: {ownersForDisplay()}</p>
+        <p>Contract Balance eth: {contractEthBalance}</p>
       </div>
       <div className="actions">
         <button onClick={handleCheckWinner}>Am I the Winner?</button>
       </div>
-      <div className="owner-actions">
+      <div className="owner-actions" style={{ display: hideOwnerActions() }}>
         for owner only:
         <button onClick={handleWithdraw}>Withdraw</button>
         <button onClick={handleDeclareWinner}>Declare Winner</button>
+        <button onClick={destroyContract}>Destroy Contract</button>
+        <button onClick={resetContract}>Reset Contract</button>
+        <form onSubmit={transferOwnership}>
+          <input type="text" />
+          <button>Transfer Ownership</button>
+        </form>
+        <form onSubmit={AddOwner}>
+          <input type="text" />
+          <button>Add Owner</button>
+        </form>
       </div>
     </div>
   );
